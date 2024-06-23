@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: full-stack-template
+  web:
+    resources:
+      static-locations: classpath:/static/

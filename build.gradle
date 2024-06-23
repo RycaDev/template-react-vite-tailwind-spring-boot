@@ -1,0 +1,110 @@
+import com.github.gradle.node.npm.task.NpmTask
+
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.3.1'
+	id 'io.spring.dependency-management' version '1.1.5'
+	id "com.github.node-gradle.node" version "7.0.1"
+}
+
+group = 'com.company'
+version = '0.0.1-SNAPSHOT'
+
+ext {
+	springBootVersion = '3.3.1'
+	javaVersion = '21'
+	myLibraryVersion = '1.2.3'
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+node {
+	download = false
+	version = '18.19.1'  // Ensure this matches your project's Node.js version
+	npmVersion = '9.2.0' // Ensure this matches your project's npm version
+	nodeProjectDir = file("${project.projectDir}/src/main/frontend")
+}
+
+tasks.register('appNpmInstall', NpmTask) {
+	description = "Reads package.json and installs all dependencies"
+	args = ['install']
+	execOverrides {
+		it.workingDir = file("${project.projectDir}/src/main/frontend")
+	}
+}
+
+tasks.register('appNpmBuild', NpmTask) {
+	description = "Builds the application for your frontend"
+	args = ['run', 'build']
+	execOverrides {
+		it.workingDir = file("${project.projectDir}/src/main/frontend")
+	}
+}
+
+tasks.register('copyFrontendToStatic', Copy) {
+	dependsOn(tasks.named('appNpmBuild'))
+	from "${project.projectDir}/src/main/frontend/dist"
+	into "${project.projectDir}/src/main/resources/static"
+}
+
+tasks.named('processResources') {
+	dependsOn(tasks.named('copyFrontendToStatic'))
+}
+
+tasks.named('build') {
+	dependsOn(tasks.named('processResources'))
+}
+//
+//tasks.register('frontendStart', NpmTask) {
+//	description = "Starts the frontend development server"
+//	args = ['run', 'dev']
+//	execOverrides {
+//		it.workingDir = file("${project.projectDir}/src/main/frontend")
+//	}
+//}
+//
+//tasks.register('bootRunFrontend', DefaultTask) {
+//	description = "Runs both Spring Boot application and frontend server concurrently"
+//	group = "application"
+//
+//	doLast {
+//		def frontendTask = tasks.register("frontendRunTask", Exec) {
+//			commandLine 'npm', 'run', 'dev'
+//			workingDir file("${project.projectDir}/src/main/frontend")
+//		}
+//
+//		def backendTask = tasks.register("backendRunTask", JavaExec) {
+//			classpath = sourceSets.main.runtimeClasspath
+//			mainClass.set("com.company.MainApplication") // Replace with your main class
+//		}
+//
+//		// Start frontend task in a new thread
+//		Thread.start {
+//			frontendTask.get().exec()
+//		}
+//
+//		// Start backend task in the main thread
+//		backendTask.get().exec()
+//	}
+//}
+

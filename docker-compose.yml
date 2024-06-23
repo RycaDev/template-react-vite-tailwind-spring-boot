@@ -1,0 +1,5 @@
+services:
+  full-stack-template:
+    build: .
+    ports:
+      - "8080:8080"
